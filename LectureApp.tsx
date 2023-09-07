@@ -9,14 +9,40 @@ import {
   StyleSheet,
   Text,
   TextInput,
+  TouchableHighlight,
   View,
 } from "react-native";
 
+interface WatchRecord {
+  seen: boolean;
+  name: string;
+}
+
+interface WatchRecordViewProps {
+  record?: WatchRecord;
+  onSeen?: (record: WatchRecord) => void;
+}
+
+function WatchRecordView(props: WatchRecordViewProps) {
+  const handlePress = () => {
+    if (props.onSeen && props.record) {
+      props.onSeen(props.record);
+    }
+  };
+  return (
+    <TouchableHighlight onPress={handlePress}>
+      <Text style={styles.labelText}>
+        {props.record?.seen ? "[x]" : "[ ]"} {props.record?.name}
+      </Text>
+    </TouchableHighlight>
+  );
+}
+
 export default function LectureApp() {
   const [birdInputText, setBirdInputText] = useState("");
-  const [birdText, setBirdText] = useState("No birds here yet.");
   const [submissions, setSubmissions] = useState(0);
   const [cancelations, setCancelations] = useState(0);
+  const [watchRecords, setWatchRecords] = useState<WatchRecord[]>([]);
 
   const handleCancel = () => {
     setBirdInputText("");
@@ -28,11 +54,14 @@ export default function LectureApp() {
     setSubmissions(submissions + 1);
     const newBird = birdInputText.trim();
     if (newBird.length > 0) {
-      if (birdText == "No birds here yet.") {
-        setBirdText("- " + newBird);
-      } else {
-        setBirdText(birdText + "\n- " + newBird);
-      }
+      const updatedWatchRecords = [
+        ...watchRecords,
+        {
+          seen: false,
+          name: newBird,
+        },
+      ];
+      setWatchRecords(updatedWatchRecords);
       setBirdInputText("");
     }
   };
@@ -40,6 +69,14 @@ export default function LectureApp() {
   const handleLabelChange = (text: string) => {
     setBirdInputText(text);
   };
+
+  const birdTextComponents = [];
+  let index = 0;
+  for (const record of watchRecords) {
+    birdTextComponents.push(
+      <WatchRecordView key={`key-${index++}`} record={record} />,
+    );
+  }
 
   return (
     <KeyboardAvoidingView
@@ -50,7 +87,7 @@ export default function LectureApp() {
         <Text style={styles.titleText}>Lecture Base Repo</Text>
         <Text style={styles.subTitleText}>A decent place to start</Text>
         <ScrollView style={styles.scrollContainer}>
-          <Text style={styles.labelText}>{birdText}</Text>
+          {birdTextComponents}
         </ScrollView>
         <Text style={styles.labelText}>
           You have submitted {submissions} time(s) and canceled {cancelations}{" "}
@@ -82,7 +119,7 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   input: {
-    fontSize: 18,
+    fontSize: 20,
     flex: 1,
     borderWidth: 1,
     padding: 3,
@@ -99,7 +136,7 @@ export const styles = StyleSheet.create({
     fontSize: 20,
   },
   labelText: {
-    fontSize: 18,
+    fontSize: 20,
   },
   horzContainer: {
     flexDirection: "row",
