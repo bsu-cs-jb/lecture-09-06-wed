@@ -12,38 +12,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-
-interface WatchRecord {
-  seen: boolean;
-  name: string;
-}
-
-// Define properties for the component
-// The ? means "optional" and means that the attribute can be undefined
-// It is the same as:
-// record: WatchRecord | undefined
-interface WatchRecordViewProps {
-  record?: WatchRecord;
-  onSeen?: (record: WatchRecord) => void;
-}
-
-function WatchRecordView(props: WatchRecordViewProps) {
-  const handlePress = () => {
-    if (props.onSeen && props.record) {
-      props.onSeen(props.record);
-    }
-  };
-  // In the following JSX we use the ? to cause the expression
-  // to evaluate to undefined if props.record is undefined instead
-  // of throwing an error.
-  return (
-    <TouchableOpacity onPress={handlePress}>
-      <Text style={styles.labelText}>
-        {props.record?.seen ? "[x]" : "[ ]"} {props.record?.name}
-      </Text>
-    </TouchableOpacity>
-  );
-}
+import WatchRecordView, { WatchRecord } from "./WatchRecordView";
 
 export default function LectureApp() {
   const [birdInputText, setBirdInputText] = useState("");
