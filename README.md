@@ -1,7 +1,5 @@
-# Lecture Repo
+# Lecture Repo for 2023-09-06 Wednesday
 
 ## Goal
 
-To document code written in class.
-
-
+Document code written in class on 2023-09-06 Wednesday.
