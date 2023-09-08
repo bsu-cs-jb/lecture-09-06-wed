@@ -1,5 +1,5 @@
 import { StatusBar } from "expo-status-bar";
-import { useRef, useState } from "react";
+import { ReactElement, useState } from "react";
 import {
   Button,
   Keyboard,
@@ -9,7 +9,7 @@ import {
   StyleSheet,
   Text,
   TextInput,
-  TouchableHighlight,
+  TouchableOpacity,
   View,
 } from "react-native";
 
@@ -18,6 +18,10 @@ interface WatchRecord {
   name: string;
 }
 
+// Define properties for the component
+// The ? means "optional" and means that the attribute can be undefined
+// It is the same as:
+// record: WatchRecord | undefined
 interface WatchRecordViewProps {
   record?: WatchRecord;
   onSeen?: (record: WatchRecord) => void;
@@ -29,12 +33,15 @@ function WatchRecordView(props: WatchRecordViewProps) {
       props.onSeen(props.record);
     }
   };
+  // In the following JSX we use the ? to cause the expression
+  // to evaluate to undefined if props.record is undefined instead
+  // of throwing an error.
   return (
-    <TouchableHighlight onPress={handlePress}>
+    <TouchableOpacity onPress={handlePress}>
       <Text style={styles.labelText}>
         {props.record?.seen ? "[x]" : "[ ]"} {props.record?.name}
       </Text>
-    </TouchableHighlight>
+    </TouchableOpacity>
   );
 }
 
@@ -46,22 +53,30 @@ export default function LectureApp() {
 
   const handleCancel = () => {
     setBirdInputText("");
-    Keyboard.dismiss();
     setCancelations(cancelations + 1);
+    // hide the keyboard since the user canceled the operation
+    Keyboard.dismiss();
   };
 
   const handleSubmit = () => {
     setSubmissions(submissions + 1);
+    // remove whitespace from the front and end of the input string
     const newBird = birdInputText.trim();
     if (newBird.length > 0) {
-      const updatedWatchRecords = [
+      // create a new array of watch records
+      // use the ... splat operator to insert all elements of the current
+      // array
+      // then add the new WatchRecord object which defaults seen: false
+      const updatedWatchRecords: WatchRecord[] = [
         ...watchRecords,
         {
           seen: false,
           name: newBird,
         },
       ];
+      // use the new list to set the value of watchRecords
       setWatchRecords(updatedWatchRecords);
+      // clear out the input text so the user can enter a new bird easily
       setBirdInputText("");
     }
   };
@@ -70,11 +85,46 @@ export default function LectureApp() {
     setBirdInputText(text);
   };
 
-  const birdTextComponents = [];
+  const handleSeen = (record: WatchRecord) => {
+    // create a new array with updated records
+    const updatedWatchRecords = [];
+    // search for this entry in the list and update it
+    for (const existingRecord of watchRecords) {
+      // NOTE: it would be better to compare these based on a unique id
+      // rather than using object equality
+      if (existingRecord == record) {
+        // use the ... splat operator to copy the keys and values from the
+        // existingRecord and then toggle the seen boolean
+        updatedWatchRecords.push({
+          ...existingRecord,
+          seen: !existingRecord.seen,
+        });
+      } else {
+        // for all other records, just move them into the new list
+        updatedWatchRecords.push(existingRecord);
+      }
+    }
+    // finally use the new list to update watchRecords in order to trigger
+    // a re-render of the component
+    setWatchRecords(updatedWatchRecords);
+  };
+
+  // create an array of ReactElements
+  const birdTextComponents: ReactElement[] = [];
+  // This method of creating a unique key is NOT RECOMMENDED, but it
+  // will work for a simple prototype use case. It will cause problems
+  // with other list components such as FlatList and SectionList.
+  // The correct solution is to assign a unique id to each WatchRecord
+  // when it is created using `nanoid` or `uuid`. I will explain this
+  // in a future lesson.
   let index = 0;
   for (const record of watchRecords) {
     birdTextComponents.push(
-      <WatchRecordView key={`key-${index++}`} record={record} />,
+      <WatchRecordView
+        key={`key-${index++}`}
+        record={record}
+        onSeen={handleSeen}
+      />,
     );
   }
 
@@ -84,17 +134,17 @@ export default function LectureApp() {
       style={styles.avoidingView}
     >
       <View style={styles.container}>
-        <Text style={styles.titleText}>Lecture Base Repo</Text>
-        <Text style={styles.subTitleText}>A decent place to start</Text>
+        <Text style={styles.titleText}>Bird Watching</Text>
+        <Text style={styles.subTitleText}>Make a list, check them off!</Text>
         <ScrollView style={styles.scrollContainer}>
           {birdTextComponents}
         </ScrollView>
         <Text style={styles.labelText}>
-          You have submitted {submissions} time(s) and canceled {cancelations}{" "}
+          You have submitted {submissions} times(s) and canceled {cancelations}{" "}
           time(s).
         </Text>
         <View style={styles.horzContainer}>
-          <Text style={styles.labelText}>Name your bird:</Text>
+          <Text style={styles.labelText}>Name of bird:</Text>
           <TextInput
             style={styles.input}
             value={birdInputText}
@@ -126,7 +176,6 @@ export const styles = StyleSheet.create({
   },
   scrollContainer: {
     flex: 1,
-    alignSelf: "flex-start",
     width: "100%",
   },
   titleText: {
